@@ -128,11 +128,11 @@ class Transformer(object):
 
     def _multiheadAttention(self, rawKeys, queries, keys, numUnits=None, causality=False, scope="multiheadAttention"):
         # rawKeys 的作用是为了计算mask时用的，因为keys是加上了position embedding的，其中不存在padding为0的值
-
+        # numUnits 计算多头注意力后的向量长度，如果为None，则取embedding_size
         numHeads = self.config.model.numHeads
         keepProp = self.config.model.keepProp
 
-        if numUnits is None:  # 若是没传入值，直接去输入数据的最后一维，即embedding size.
+        if numUnits is None:  # 若是没传入值，直接取输入数据的最后一维，即embedding size.
             numUnits = queries.get_shape().as_list()[-1]
 
         # tf.layers.dense可以做多维tensor数据的非线性映射，在计算self-Attention时，一定要对这三个值进行非线性映射，
@@ -160,7 +160,7 @@ class Transformer(object):
         # queryies = keys，因此只要一方为0，计算出的权重就为0。
         # 具体关于key mask的介绍可以看看这里： https://github.com/Kyubyong/transformer/issues/3
 
-        # 利用tf，tile进行张量扩张， 维度[batch_size * numHeads, keys_len] keys_len = keys 的序列长度
+        # 利用tf.tile进行张量扩张， 维度[batch_size * numHeads, keys_len] keys_len = keys 的序列长度
         keyMasks = tf.tile(rawKeys, [numHeads, 1])
 
         # 增加一个维度，并进行扩张，得到维度[batch_size * numHeads, queries_len, keys_len]
